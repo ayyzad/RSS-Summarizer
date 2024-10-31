@@ -1,0 +1,11 @@
+{
+    "feed_urls": [
+        "https://multicoin.capital/rss.xml",
+        "https://www.umbraresearch.xyz/writings/rss.xml",
+        "https://blog.hack.vc/rss/",
+        "https://dba.xyz/what/feed/",
+        "https://www.syncracy.io/writing?format=rss",
+        "https://variant.mirror.xyz/feed/atom",
+        "https://panteracapital.com/article/feed/"
+    ]
+}
