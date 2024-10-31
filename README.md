@@ -59,18 +59,20 @@ Run scheduled (daily at 8:00 AM):
 python main.py --schedule
 ```
 
-## Directory Structure
+## Project Structure
 
+```plaintext
 RSS-Summarizer/
-├── articles/ # Stores JSON files of summarized articles
-├── logs/ # Log files directory
-├── config.json # RSS feed URLs configuration
-├── config.py # General configuration settings
-├── email_sender.py # Email functionality
-├── feed_parser.py # RSS feed parsing
-├── main.py # Main application entry point
-├── summarizer.py # OpenAI integration for summarization
-└── article_cache.py # Cache system for processed articles
+├── articles/              # Stores JSON files of summarized articles
+├── logs/                  # Log files directory
+├── config.json           # RSS feed URLs configuration
+├── config.py            # General configuration settings
+├── email_sender.py     # Email functionality
+├── feed_parser.py     # RSS feed parsing
+├── main.py          # Main application entry point
+├── summarizer.py   # OpenAI integration for summarization
+└── article_cache.py   # Cache system for processed articles
+```
 
 ## Configuration
 
