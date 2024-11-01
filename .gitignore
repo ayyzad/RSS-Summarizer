@@ -31,8 +31,11 @@ logs/
 # Processed articles cache
 processed_articles.json
 
-# Articles directory
-articles/*.json
+# Articles and cache directories
+articles/
+articles/processed/
+articles/summaries/
+articles/**/*.json
 
 # IDE specific files
 .idea/

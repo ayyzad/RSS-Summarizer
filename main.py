@@ -5,15 +5,22 @@ import json
 from datetime import datetime
 import schedule
 import time
-from logger import setup_logger
+from logger import setup_logger, log_section, log_summary
 import argparse
 import logging
 from article_cache import ArticleCache
+import os
+from pathlib import Path
 
 logger = setup_logger(__name__)
 
 # Set logger to only show INFO and above (will skip DEBUG level messages)
 logger.setLevel(logging.INFO)
+
+# Load config
+with open('config.json', 'r') as f:
+    config = json.load(f)
+    feed_urls = config['feed_urls']  # Get feed URLs from config
 
 def process_feeds(feed_urls):
     logger.info("Starting feed processing")
@@ -34,7 +41,8 @@ def process_feeds(feed_urls):
                     'link': article['link'],
                     'summary': summary,
                     'published': article['published'].isoformat(),
-                    'source': feed_url
+                    'source': feed_url,
+                    'category': article['category']
                 })
 
     # Save summaries
@@ -60,97 +68,92 @@ def process_feeds(feed_urls):
         logger.error("Failed to send email")
 
 def run_daily():
-    # Initialize cache
+    logger = setup_logger(__name__)
+    summarizer = Summarizer()
     cache = ArticleCache()
-    
-    # Load feed URLs from config
-    with open('config.json', 'r') as f:
-        config = json.load(f)
-        feed_urls = config['feed_urls']
+    all_summaries = []
     
     logger.info("Starting daily run")
-    all_summaries = []
-    summarizer = Summarizer()
+    
+    total_feeds = len(feed_urls)
+    processed_feeds = 0
     
     for feed_url in feed_urls:
+        processed_feeds += 1
+        logger.info(f"Progress: {processed_feeds}/{total_feeds} feeds ({(processed_feeds/total_feeds)*100:.1f}%)")
         logger.info(f"Processing feed: {feed_url}")
-        parser = FeedParser(feed_url)
         
         try:
-            articles = parser.parse_feed()
+            parser = FeedParser(feed_url)  # Create parser once
+            articles = parser.parse_feed()  # Parse feed once
+            
+            if not articles:
+                logger.warning(f"No articles found in {feed_url}")
+                continue
+                
             logger.info(f"Found {len(articles)} articles in {feed_url}")
             
-            for article in articles:
-                try:
-                    # Skip if already processed
-                    if cache.is_processed(article['link']):
-                        logger.info(f"Skipping already processed article: {article['title']}")
-                        continue
-                        
-                    if 'text' in article and article['text']:
-                        summary = summarizer.summarize(article['text'])
-                        if summary:
-                            all_summaries.append({
-                                'title': article['title'],
-                                'link': article['link'],
-                                'summary': summary,
-                                'published': article['published'].isoformat() if isinstance(article['published'], datetime) else article['published'],
-                                'source': feed_url
-                            })
-                            # Add to cache after successful processing
-                            cache.add_article(article['link'])
-                            logger.info(f"Successfully summarized: {article['title']}")
-                except Exception as e:
-                    logger.error(f"Error processing article {article.get('title', 'Unknown')}: {str(e)}")
+            # Process only new articles
+            new_articles = [a for a in articles if not cache.is_cached(a['link'])]
+            if new_articles:
+                logger.info(f"Found {len(new_articles)} new articles to process")
+                for article in new_articles:
+                    summary = summarizer.summarize(article['text'])
+                    if summary:
+                        cache.add_article(article['link'])
+                        summary_with_metadata = {
+                            'title': article['title'],
+                            'link': article['link'],
+                            'published': article['published'],
+                            'source': feed_url,
+                            **summary  # Unpack the summary and category
+                        }
+                        all_summaries.append(summary_with_metadata)
+            else:
+                logger.info("Found 0 new articles to process")
+                
         except Exception as e:
             logger.error(f"Error processing feed {feed_url}: {str(e)}")
-    
-    # Clean up old cache entries
-    cache.cleanup_old_entries()
-    
-    # Only proceed if we have summaries
+
     if all_summaries:
-        # Save summaries
+        # Convert datetime objects to strings before saving
+        formatted_summaries = []
+        for summary in all_summaries:
+            formatted_summary = summary.copy()
+            if 'published' in formatted_summary:
+                formatted_summary['published'] = formatted_summary['published'].isoformat()
+            formatted_summaries.append(formatted_summary)
+            
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filepath = f'/Users/azadneenan/Documents/RSS-Summarizer/articles/summaries_{timestamp}.json'
+        
+        # Get project root directory and create output path
+        project_root = Path(__file__).parent
+        output_dir = project_root / 'articles' / 'summaries'
+        os.makedirs(output_dir, exist_ok=True)
+        
+        filename = f'summaries_{timestamp}.json'
+        filepath = output_dir / filename
         
         try:
             with open(filepath, 'w') as f:
-                json.dump(all_summaries, f, indent=2)
-            logger.info(f"Saved {len(all_summaries)} summaries to {filepath}")
-            
-            # Send email
-            logger.info("Sending email with summaries")
-            email_sender = EmailSender()
-            if email_sender.send_email(all_summaries):
-                logger.info("Email sent successfully")
-            else:
-                logger.error("Failed to send email")
+                json.dump(formatted_summaries, f, indent=2)
+            logger.info(f"Summaries saved successfully to {filepath}")
         except Exception as e:
-            logger.error(f"Error saving summaries or sending email: {str(e)}")
+            logger.error(f"Error saving summaries: {str(e)}")
+
+        # Send email
+        logger.info("Initiating email sending")
+        email_sender = EmailSender()
+        if email_sender.send_summaries(all_summaries):
+            logger.info("Email sent successfully")
+        else:
+            logger.error("Failed to send email")
     else:
-        logger.warning("No summaries were generated")
+        logger.warning("No summaries to save or send")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='RSS Feed Summarizer')
-    parser.add_argument('--schedule', action='store_true', 
-                       help='Run in scheduled mode (daily at 08:00)')
-    args = parser.parse_args()
-
+    logger = setup_logger(__name__)
     logger.info("Starting Feed Summarizer application")
-    
-    if args.schedule:
-        logger.info("Running in scheduled mode")
-        schedule.every().day.at("08:00").do(run_daily)
-        logger.info("Scheduled daily run for 08:00")
-        
-        # Run immediately on start
-        run_daily()
-        
-        while True:
-            schedule.run_pending()
-            time.sleep(60)
-    else:
-        logger.info("Running in immediate mode (single run)")
-        run_daily()
-        logger.info("Single run completed")
+    logger.info("Running in immediate mode (single run)")
+    run_daily()
+    logger.info("Single run completed")

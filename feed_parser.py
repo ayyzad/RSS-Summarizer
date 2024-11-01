@@ -5,73 +5,63 @@ from datetime import datetime, timedelta
 from config import MAX_ARTICLES, TIME_WINDOW
 from logger import setup_logger
 import logging
+import json
+from dateutil import parser as date_parser
 
-logger = setup_logger(__name__)
+def parse_date(date_str):
+    try:
+        return date_parser.parse(date_str)
+    except (ValueError, TypeError):
+        return datetime.now()  # Default to current time if parsing fails
 
 class FeedParser:
     def __init__(self, feed_url):
         self.feed_url = feed_url
-        logger.setLevel(logging.INFO)
-        logger.info(f"Initialized FeedParser for {feed_url}")
+        self.logger = setup_logger(__name__)
+        self.logger.info(f"Initialized FeedParser for {feed_url}")
 
     def parse_feed(self):
-        logger.info(f"Starting to parse feed: {self.feed_url}")
-        feed = feedparser.parse(self.feed_url)
-        articles = []
-        cutoff_time = datetime.now() - timedelta(seconds=TIME_WINDOW)
-
-        if hasattr(feed, 'status') and feed.status != 200:
-            logger.error(f"Failed to fetch feed: {self.feed_url}, status: {feed.status}")
-            return articles
-
-        logger.info(f"Found {len(feed.entries)} entries in feed")
-        
-        for entry in feed.entries[:MAX_ARTICLES]:
-            try:
-                # Get publication date
-                pub_date = None
-                if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    pub_date = datetime(*entry.published_parsed[:6])
-                elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
-                    pub_date = datetime(*entry.updated_parsed[:6])
-                else:
-                    pub_date = datetime.now()  # Use current time if no date available
-                
-                # Extract article text
-                article_text = self._extract_article_text(entry.link)
-                
-                if article_text:  # Only add if we successfully got the text
-                    articles.append({
-                        'title': entry.title,
-                        'link': entry.link,
-                        'text': article_text,
-                        'published': pub_date
-                    })
-                    logger.info(f"Successfully extracted article: {entry.title}")
-                
-            except Exception as e:
-                logger.error(f"Error processing entry: {str(e)}")
-
-        logger.info(f"Successfully parsed {len(articles)} articles from feed")
-        return articles
-
-    def _extract_article_text(self, url):
-        logger.debug(f"Extracting text from: {url}")
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
         try:
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.text, 'html.parser')
+            self.logger.info(f"Starting to parse feed: {self.feed_url}")
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            response = requests.get(self.feed_url, headers=headers, timeout=10)
             
-            for tag in soup(['script', 'style', 'nav', 'header', 'footer']):
-                tag.decompose()
+            if response.status_code != 200:
+                self.logger.error(f"Failed to fetch feed: {self.feed_url}, status: {response.status_code}")
+                return []
+
+            feed = feedparser.parse(response.text)
+            entries = feed.entries[:MAX_ARTICLES]
             
-            paragraphs = soup.find_all('p')
-            text = ' '.join(p.get_text().strip() for p in paragraphs)
+            if not entries:
+                self.logger.info(f"No entries found in feed")
+                return []
             
-            return text
+            self.logger.info(f"Found {len(entries)} entries in feed")
+            
+            articles = []
+            for entry in entries:
+                article = self.extract_article_text(entry)
+                if article:
+                    articles.append(article)
+            
+            return articles
+            
         except Exception as e:
-            logger.error(f"Error extracting text from {url}: {str(e)}")
+            self.logger.error(f"Error parsing feed {self.feed_url}: {str(e)}")
+            return []
+
+    def extract_article_text(self, entry):
+        try:
+            title = entry.get('title', '')
+            return {
+                'title': title,
+                'link': entry.get('link', ''),
+                'text': entry.get('summary', ''),
+                'published': parse_date(entry.get('published', entry.get('updated', '')))
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to extract article: {str(e)}")
             return None

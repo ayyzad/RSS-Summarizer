@@ -10,6 +10,19 @@ An automated tool that fetches articles from RSS feeds, summarizes them using Op
 - Caches processed articles to avoid duplicates
 - Configurable time window for article processing
 - Customizable summary prompts
+- Daily digest of summarized articles
+- Articles grouped by category
+- Support for multiple recipients via BCC
+- HTML formatted emails with clickable links
+- Source and publication date included for each article
+
+## Caching System
+
+The application includes an article caching system that:
+- Prevents duplicate processing of articles
+- Archives old entries after 30 days
+- Stores cache in JSON format
+- Maintains separate active and archive caches
 
 ## Prerequisites
 
@@ -42,7 +55,7 @@ An automated tool that fetches articles from RSS feeds, summarizes them using Op
    - Fill in your OpenAI API key
    - Add your Gmail address
    - Add the Google App Password (not your regular Gmail password)
-   - Add recipient email address
+   - Add recipient email addresses (comma-separated for BCC)
 
 5. Configure RSS feeds:
    - Edit `config.json` to add your desired RSS feed URLs
@@ -96,7 +109,7 @@ Adjust settings in `config.py`:
 
 ## Logging
 
-Logs are stored in `logs/feed_summarizer.log`. The log level can be adjusted in the code to show more or less detail.
+Logs are stored in `logs/`. The log level can be adjusted in the code to show more or less detail.
 
 ## Contributing
 
