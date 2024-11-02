@@ -161,10 +161,9 @@ def main():
     
     logger.info("Scheduled jobs: 9:00 AM and 5:00 PM daily")
     
-    # Keep the script running
     while True:
         schedule.run_pending()
-        time.sleep(60)  # Check every minute
+        time.sleep(60)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='RSS Feed Summarizer')
