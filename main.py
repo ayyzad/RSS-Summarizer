@@ -94,7 +94,12 @@ def run_daily():
             logger.info(f"Found {len(articles)} articles in {feed_url}")
             
             # Process only new articles
-            new_articles = [a for a in articles if not cache.is_processed(a['link'])]
+            new_articles = []
+            for article in articles:
+                is_cached = cache.is_processed(article['link'])
+                logger.info(f"Article {article['link']} cached: {is_cached}")
+                if not is_cached:
+                    new_articles.append(article)
             if new_articles:
                 logger.info(f"Found {len(new_articles)} new articles to process")
                 for article in new_articles:

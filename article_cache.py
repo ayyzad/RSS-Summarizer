@@ -10,25 +10,22 @@ class ArticleCache:
     def __init__(self, 
                  cache_file='articles/processed/processed_articles.json', 
                  archive_file='articles/processed/archived_processed_articles.json'):
-        # Get project root directory (where main.py is located)
-        project_root = Path(__file__).parent.parent
+        # Use absolute paths
+        base_dir = os.environ.get('STORAGE_PATH', '/app/articles')
+        self.cache_file = Path(base_dir) / 'processed' / 'processed_articles.json'
+        self.archive_file = Path(base_dir) / 'processed' / 'archived_processed_articles.json'
         
-        # Create full paths relative to project root
-        self.cache_file = project_root / cache_file
-        self.archive_file = project_root / archive_file
-        
-        # Create directories if they don't exist
+        # Create directories
         os.makedirs(self.cache_file.parent, exist_ok=True)
-        os.makedirs(self.archive_file.parent, exist_ok=True)
         
+        # Load cache
         self.cache = self._load_cache(self.cache_file)
         self.archive = self._load_cache(self.archive_file)
         self.cached_articles = set(self.cache.keys()) | set(self.archive.keys())
         
-        # Debug logging
-        logger.info(f"Loaded {len(self.cached_articles)} cached articles")
-        logger.info(f"Cache file location: {self.cache_file}")
-        logger.debug(f"First few cached URLs: {list(self.cached_articles)[:5]}")
+        # Log cache status
+        logger.info(f"Loaded {len(self.cached_articles)} cached articles from {self.cache_file}")
+        logger.info(f"First few cached URLs: {list(self.cached_articles)[:3]}")
 
     def _load_cache(self, filename):
         """Load cache from file, creating it if it doesn't exist"""
