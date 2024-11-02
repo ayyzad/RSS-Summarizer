@@ -17,10 +17,25 @@ logger = setup_logger(__name__)
 # Set logger to only show INFO and above (will skip DEBUG level messages)
 logger.setLevel(logging.INFO)
 
-# Load config
-with open('config.json', 'r') as f:
-    config = json.load(f)
-    feed_urls = config['feed_urls']  # Get feed URLs from config
+def load_config():
+    logger.info("Attempting to load configuration")
+    config_paths = [
+        '/app/config/config.json',  # Cloud Run mounted volume
+        'config.json'               # Local development
+    ]
+    
+    for path in config_paths:
+        try:
+            logger.info(f"Trying to load config from: {path}")
+            with open(path, 'r') as f:
+                config = json.load(f)
+                logger.info(f"Successfully loaded config from {path}")
+                return config
+        except FileNotFoundError:
+            logger.warning(f"Config not found at {path}")
+            continue
+    
+    raise FileNotFoundError("Could not find config.json in any location")
 
 def process_feeds(feed_urls):
     logger.info("Starting feed processing")
@@ -75,6 +90,15 @@ def run_daily():
     
     logger.info("Starting daily run")
     
+    # Load config first
+    try:
+        config = load_config()
+        feed_urls = config['feed_urls']
+        logger.info(f"Loaded {len(feed_urls)} feed URLs from config")
+    except Exception as e:
+        logger.error(f"Failed to load config: {str(e)}")
+        raise
+
     total_feeds = len(feed_urls)
     processed_feeds = 0
     
