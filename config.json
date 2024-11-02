@@ -27,5 +27,13 @@
         "http://rss.cnn.com/rss/money_news_international.rss",
         "https://apnews.com/world-news.rss",
         "http://feeds.marketwatch.com/marketwatch/realtimeheadlines"
+    ],
+    "email_recipients": [
+        "azadneenan@gmail.com",
+        "roxy.peloux@gmail.com",
+        "vineshpatel445@gmail.com",
+        "vahidfalsafi27@gmail.com",
+        "abm.mahallati@gmail.com",
+        "parsaarastin@gmail.com"
     ]
 }

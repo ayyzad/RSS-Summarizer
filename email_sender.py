@@ -4,7 +4,6 @@ from email.mime.multipart import MIMEMultipart
 from config import (
     EMAIL_SENDER, 
     EMAIL_PASSWORD, 
-    EMAIL_RECIPIENTS, 
     SMTP_SERVER, 
     SMTP_PORT
 )
@@ -17,10 +16,15 @@ logger = setup_logger(__name__)
 class EmailSender:
     def __init__(self):
         self.logger = setup_logger(__name__)
+        
+        # Load config file for recipients
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+        
         self.email_config = {
             'sender': EMAIL_SENDER,
             'password': EMAIL_PASSWORD,
-            'recipients': [email.strip() for email in EMAIL_RECIPIENTS if email.strip()],  # Clean empty spaces
+            'recipients': config.get('email_recipients', []),  # Get recipients from config.json
             'smtp_server': SMTP_SERVER,
             'smtp_port': SMTP_PORT
         }
