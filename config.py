@@ -16,7 +16,7 @@ You analyze articles and categorize them while creating concise summaries.
 Always return your response in a valid JSON format with 'summary' and 'category' fields."""
 
 SUMMARY_PROMPT = """Please analyze the following article and:
-1. Create a brief 2-3 sentence summary focusing on the main points
+1. Create a brief 2-3 sentence summary focusing on the main points. Use direct language avoiding any fluff words and be concise.
 2. Categorize it into one of these categories: crypto/blockchain, venture_capital, us_news, world_news, tech_news, business, finance, science, energy, sports, other
 
 Return your response in this JSON format:

@@ -84,12 +84,22 @@ class EmailSender:
             """
             
             for summary in category_summaries:
+                # Format the date to show only Month Day, Year
+                try:
+                    if isinstance(summary['published'], str):
+                        published_date = datetime.fromisoformat(summary['published'])
+                    else:
+                        published_date = summary['published']
+                    formatted_date = published_date.strftime('%B %d, %Y')  # e.g., "March 1, 2024"
+                except Exception as e:
+                    self.logger.warning(f"Error formatting date: {e}")
+                    formatted_date = "Date unavailable"  # fallback if date parsing fails
+                
                 html += f"""
                 <div class="article">
                     <h3><a href="{summary['link']}" class="title">{summary['title']}</a></h3>
                     <p class="meta">
-                        <strong>Published:</strong> {summary['published']}<br>
-                        <strong>Source:</strong> {summary['source']}
+                        <strong>Published:</strong> {formatted_date}
                     </p>
                     <p class="summary">{summary['summary']}</p>
                 </div>

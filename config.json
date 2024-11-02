@@ -1,12 +1,5 @@
 {
     "feed_urls": [
-        "https://multicoin.capital/rss.xml",
-        "https://www.umbraresearch.xyz/writings/rss.xml",
-        "https://blog.hack.vc/rss/",
-        "https://dba.xyz/what/feed/",
-        "https://www.syncracy.io/writing?format=rss",
-        "https://variant.mirror.xyz/feed/atom",
-        "https://panteracapital.com/article/feed/",
         "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
         "http://feeds.bbci.co.uk/news/world/rss.xml",
         "http://feeds.reuters.com/reuters/topNews",
