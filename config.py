@@ -7,7 +7,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Feed Configuration
-MAX_ARTICLES = 5
+MAX_ARTICLES = 3
 TIME_WINDOW = 86400  # 24 hours in seconds
 
 # Summarization Configuration

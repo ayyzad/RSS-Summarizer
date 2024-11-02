@@ -19,23 +19,16 @@ lib64/
 parts/
 sdist/
 var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 
-# Logs
+# Logs and data
 logs/
-*.log
-
-# Processed articles cache
-processed_articles.json
-
-# Articles and cache directories
-articles/
-articles/processed/
-articles/summaries/
-articles/**/*.json
+articles/*
+!articles/processed/
+articles/processed/*
+!articles/processed/processed_articles.json
 
 # IDE specific files
 .idea/
@@ -43,3 +36,7 @@ articles/**/*.json
 *.swp
 *.swo
 .DS_Store
+
+# Docker
+.docker/
+docker-compose.override.yml

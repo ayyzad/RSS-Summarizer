@@ -151,9 +151,29 @@ def run_daily():
     else:
         logger.warning("No summaries to save or send")
 
-if __name__ == "__main__":
+def main():
     logger = setup_logger(__name__)
     logger.info("Starting Feed Summarizer application")
-    logger.info("Running in immediate mode (single run)")
-    run_daily()
-    logger.info("Single run completed")
+    
+    # Schedule jobs
+    schedule.every().day.at("09:00").do(run_daily)
+    schedule.every().day.at("17:00").do(run_daily)
+    
+    logger.info("Scheduled jobs: 9:00 AM and 5:00 PM daily")
+    
+    # Keep the script running
+    while True:
+        schedule.run_pending()
+        time.sleep(60)  # Check every minute
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='RSS Feed Summarizer')
+    parser.add_argument('--run-once', action='store_true', help='Run once and exit')
+    args = parser.parse_args()
+    
+    if args.run_once:
+        logger.info("Running single execution")
+        run_daily()
+    else:
+        logger.info("Starting scheduled execution")
+        main()

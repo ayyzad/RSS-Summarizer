@@ -24,6 +24,17 @@ class EmailSender:
             'smtp_server': SMTP_SERVER,
             'smtp_port': SMTP_PORT
         }
+        # Add category order
+        self.category_order = [
+            'us_news',
+            'world_news',
+            'tech_news',
+            'business',
+            'crypto/blockchain',
+            'science',
+            'health',
+            'other'
+        ]
         self.logger.info("Initialized EmailSender")
 
     def format_summaries_to_html(self, summaries):
@@ -36,6 +47,14 @@ class EmailSender:
             if category not in categorized_summaries:
                 categorized_summaries[category] = []
             categorized_summaries[category].append(summary)
+
+        # Get unknown categories and add them to the order list
+        unknown_categories = set(categorized_summaries.keys()) - set(self.category_order)
+        if unknown_categories:
+            self.logger.warning(f"Found unknown categories: {', '.join(unknown_categories)}")
+            categories_to_display = self.category_order + list(unknown_categories)
+        else:
+            categories_to_display = self.category_order
 
         html = """
         <html>
@@ -75,37 +94,39 @@ class EmailSender:
         <body>
         """
 
-        # Add summaries by category
-        for category, category_summaries in categorized_summaries.items():
-            category_display = category.replace('_', ' ').title()
-            html += f"""
-            <div class="category" id="{category}">
-                <h2 class="category-title">{category_display} ({len(category_summaries)})</h2>
-            """
-            
-            for summary in category_summaries:
-                # Format the date to show only Month Day, Year
-                try:
-                    if isinstance(summary['published'], str):
-                        published_date = datetime.fromisoformat(summary['published'])
-                    else:
-                        published_date = summary['published']
-                    formatted_date = published_date.strftime('%B %d, %Y')  # e.g., "March 1, 2024"
-                except Exception as e:
-                    self.logger.warning(f"Error formatting date: {e}")
-                    formatted_date = "Date unavailable"  # fallback if date parsing fails
-                
+        # Add summaries by category in specified order
+        for category in categories_to_display:
+            if category in categorized_summaries:
+                category_summaries = categorized_summaries[category]
+                category_display = category.replace('_', ' ').title()
                 html += f"""
-                <div class="article">
-                    <h3><a href="{summary['link']}" class="title">{summary['title']}</a></h3>
-                    <p class="meta">
-                        <strong>Published:</strong> {formatted_date}
-                    </p>
-                    <p class="summary">{summary['summary']}</p>
-                </div>
+                <div class="category" id="{category}">
+                    <h2 class="category-title">{category_display} ({len(category_summaries)})</h2>
                 """
-            
-            html += "</div>"
+                
+                for summary in category_summaries:
+                    # Format the date to show only Month Day, Year
+                    try:
+                        if isinstance(summary['published'], str):
+                            published_date = datetime.fromisoformat(summary['published'])
+                        else:
+                            published_date = summary['published']
+                        formatted_date = published_date.strftime('%B %d, %Y')  # e.g., "March 1, 2024"
+                    except Exception as e:
+                        self.logger.warning(f"Error formatting date: {e}")
+                        formatted_date = "Date unavailable"  # fallback if date parsing fails
+                    
+                    html += f"""
+                    <div class="article">
+                        <h3><a href="{summary['link']}" class="title">{summary['title']}</a></h3>
+                        <p class="meta">
+                            <strong>Published:</strong> {formatted_date}
+                        </p>
+                        <p class="summary">{summary['summary']}</p>
+                    </div>
+                    """
+                
+                html += "</div>"
         
         html += "</body></html>"
         logger.debug("HTML formatting completed")
@@ -118,7 +139,7 @@ class EmailSender:
                 return False
 
             msg = MIMEMultipart('alternative')
-            msg['Subject'] = f"RSS Feed Summary - {datetime.now().strftime('%Y-%m-%d')}"
+            msg['Subject'] = f"Daily News Brief - {datetime.now().strftime('%Y-%m-%d')}"
             msg['From'] = self.email_config['sender']
             # Set primary recipient as the sender (or first recipient)
             msg['To'] = self.email_config['sender']
