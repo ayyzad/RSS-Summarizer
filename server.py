@@ -16,6 +16,9 @@ def health_check():
 def trigger_run():
     try:
         logger.info("Received trigger request")
+        # List contents of /app/config
+        logger.info(f"Contents of /app/config: {os.listdir('/app/config')}")
+        
         run_daily()
         logger.info("Run completed successfully")
         return jsonify({'status': 'success', 'message': 'RSS summarizer run completed'}), 200

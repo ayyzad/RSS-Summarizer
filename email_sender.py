@@ -17,17 +17,34 @@ class EmailSender:
     def __init__(self):
         self.logger = setup_logger(__name__)
         
-        # Load config file for recipients
-        with open('config.json', 'r') as f:
-            config = json.load(f)
+        # Try different config paths
+        config_paths = [
+            '/app/config/config.json',  # Cloud Run mounted volume
+            'config.json'               # Local development
+        ]
+        
+        config = None
+        for path in config_paths:
+            try:
+                with open(path, 'r') as f:
+                    config = json.load(f)
+                    self.logger.info(f"Successfully loaded config from {path}")
+                    break
+            except FileNotFoundError:
+                self.logger.warning(f"Config not found at {path}")
+                continue
+        
+        if config is None:
+            raise FileNotFoundError("Could not find config.json in any location")
         
         self.email_config = {
             'sender': EMAIL_SENDER,
             'password': EMAIL_PASSWORD,
-            'recipients': config.get('email_recipients', []),  # Get recipients from config.json
+            'recipients': config.get('email_recipients', []),
             'smtp_server': SMTP_SERVER,
             'smtp_port': SMTP_PORT
         }
+        
         # Add category order
         self.category_order = [
             'us_news',
@@ -39,7 +56,7 @@ class EmailSender:
             'health',
             'other'
         ]
-        self.logger.info("Initialized EmailSender")
+        self.logger.info(f"Initialized EmailSender with {len(self.email_config['recipients'])} recipients")
 
     def format_summaries_to_html(self, summaries):
         logger.debug("Formatting summaries to HTML")
