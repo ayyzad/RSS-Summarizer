@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def health_check():
     return 'RSS Summarizer is running', 200
 
