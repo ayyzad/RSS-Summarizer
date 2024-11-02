@@ -21,20 +21,11 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Flask
-RUN pip install flask
-
 # Copy the rest of the application
 COPY . .
 
 # Create necessary directories
 RUN mkdir -p articles/processed articles/summaries logs
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-
-# Expose port 8080
-EXPOSE 8080
-
-# Run the server instead of main.py
-CMD ["python", "server.py"]
+# Run the original main.py
+CMD ["python", "main.py"] 
