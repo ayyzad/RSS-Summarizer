@@ -1,8 +1,12 @@
-from flask import Flask
+from flask import Flask, jsonify
+import threading
 from main import run_daily
 import os
+import traceback
+from logger import setup_logger
 
 app = Flask(__name__)
+logger = setup_logger(__name__)
 
 @app.route('/', methods=['GET'])
 def health_check():
@@ -11,10 +15,18 @@ def health_check():
 @app.route('/run', methods=['POST'])
 def trigger_run():
     try:
+        logger.info("Received trigger request")
         run_daily()
-        return 'RSS summarizer run completed', 200
+        logger.info("Run completed successfully")
+        return jsonify({'status': 'success', 'message': 'RSS summarizer run completed'}), 200
     except Exception as e:
-        return f'Error: {str(e)}', 500
+        error_msg = f"Error during run: {str(e)}\n{traceback.format_exc()}"
+        logger.error(error_msg)
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
