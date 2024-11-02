@@ -145,9 +145,7 @@ class EmailSender:
             msg = MIMEMultipart('alternative')
             msg['Subject'] = f"Daily News Brief - {datetime.now().strftime('%Y-%m-%d')}"
             msg['From'] = self.email_config['sender']
-            # Set primary recipient as the sender (or first recipient)
             msg['To'] = self.email_config['sender']
-            # Add BCC recipients (hidden from other recipients)
             msg['Bcc'] = ', '.join(self.email_config['recipients'])
             
             # Create HTML content
@@ -159,10 +157,11 @@ class EmailSender:
                                 self.email_config['smtp_port']) as server:
                 server.login(self.email_config['sender'], 
                            self.email_config['password'])
-                # Send to all recipients (including BCCs)
+                # Send to sender and BCC recipients (without duplicating)
+                all_recipients = [self.email_config['sender']] + self.email_config['recipients']
                 server.sendmail(
                     self.email_config['sender'],
-                    [self.email_config['sender']] + self.email_config['recipients'],  # Include sender in recipient list
+                    list(set(all_recipients)),  # Remove duplicates
                     msg.as_string()
                 )
 

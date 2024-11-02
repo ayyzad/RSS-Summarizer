@@ -1,0 +1,9 @@
+{
+  "feed_urls": [
+    "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+    "https://feeds.a.dj.com/rss/RSSWorldNews.xml"
+  ],
+  "email_recipients": [
+    "example@email.com"
+  ]
+} 
